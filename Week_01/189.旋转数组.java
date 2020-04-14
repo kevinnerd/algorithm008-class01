@@ -49,19 +49,19 @@
  *      重复k次，得到结果
  * 复杂度：空间复杂度O(1)，时间复杂度 O(k*n)
  */
-// class Solution {
-//     public void rotate(int[] nums, int k) {
-//         int last_index = nums.length - 1;
-//         while (k > 0) {
-//             int last = nums[last_index];
-//             for (int i = last_index; i > 0; i--) {
-//                 nums[i] = nums[i-1];
-//             }
-//             nums[0] = last;
-//             k--;
-//         }
-//     }
-// }
+class Solution {
+    public void rotate(int[] nums, int k) {
+        int last_index = nums.length - 1;
+        while (k > 0) {
+            int last = nums[last_index];
+            for (int i = last_index; i > 0; i--) {
+                nums[i] = nums[i-1];
+            }
+            nums[0] = last;
+            k--;
+        }
+    }
+}
 
 /**
  * 思路：多次反转
