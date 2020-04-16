@@ -50,15 +50,15 @@
 // @lc code=start
 class Solution {
     public int subtractProductAndSum(int n) {
-        int sum_of_bit = 0;
-        int mul_of_bit = 1;
+        int sum = 0;
+        int product = 1;
         while (n != 0) {
-            int bit = n % 10;
-            mul_of_bit *= bit;
-            sum_of_bit += bit;
+            int digit = n % 10;
+            product *= digit;
+            sum += digit;
             n = n / 10;
         } 
-        return mul_of_bit - sum_of_bit;
+        return product - sum;
     }
 }
 // @lc code=end
