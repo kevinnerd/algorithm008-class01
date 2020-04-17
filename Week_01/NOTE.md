@@ -78,3 +78,197 @@
 
 ## 双端队列的Java源码剖析
 
+在视频课的第4讲中，老师讲到了栈和队列以及双端队列这几种数据结构，另外还包括优先级队列。
+
+Java中对于双端队列的接口定义是`java.util.Deque`，这个接口有多种不同的实现以应对不同的应用场
+景，我这里只针对其中的两个实现来做分析，一个是基于**链表**实现的`LinkedList`，另一个是基于
+**数组**实现的`ArrayDeque`，通过学习双端队列的两种不同的实现，来加强自己对队列这种数据结构的
+理解。
+
+### LinkedList实现分析
+
+首先从LinkedList源码可以分析出，这个类本质上是一个双链表的数据结构，之所以说是双链表，从它对于
+Node节点的定义可以分析出来：
+
+```java
+    private static class Node<E> {
+        E item;
+        Node<E> next;
+        Node<E> prev;
+
+        Node(Node<E> prev, E element, Node<E> next) {
+            this.item = element;
+            this.next = next;
+            this.prev = prev;
+        }
+    }
+```
+
+每个Node维护着前驱节点的指针prev，以及后继节点的指针next，这不正是典型的双链表结构吗~
+
+另外LinkedList中维护了链表的头尾节点first和last，因为双端队列需要对头尾节点进行插入和删除操作，
+因此这里需要单独维护头尾节点。
+
+```java
+    /**
+     * Pointer to first node.
+     * Invariant: (first == null && last == null) ||
+     *            (first.prev == null && first.item != null)
+     */
+    transient Node<E> first;
+
+    /**
+     * Pointer to last node.
+     * Invariant: (first == null && last == null) ||
+     *            (last.next == null && last.item != null)
+     */
+    transient Node<E> last;
+```
+
+说完基本结构之后，下面分析一下双端队列的几个核心的添加/删除/获取元素的接口。
+
+首先看新增元素的接口`offerFirst()`,`addFirst()`，通过源码可以看到，`offerFirst()`的实现
+是直接调用的`addFirst()`，那么这里直接看`addFirst()`的实现即可:
+
+```java
+    /**
+     * Inserts the specified element at the beginning of this list.
+     *
+     * @param e the element to add
+     */
+    public void addFirst(E e) {
+        linkFirst(e);
+    }
+
+    /**
+     * Links e as first element.
+     */
+    private void linkFirst(E e) {
+        final Node<E> f = first;
+        final Node<E> newNode = new Node<>(null, e, f);
+        first = newNode;
+        if (f == null)
+            last = newNode;
+        else
+            f.prev = newNode;
+        size++;
+        modCount++;
+    }
+```
+
+这里可以看到，实际的实现逻辑在私有方法`linkFirst()`中，这里所做的操作实际上也很简单，就是以新
+增的元素创建的节点为新的头节点，然后将原有的头节点作为新节点的next节点，下面画个图来清晰的理一
+下这里的逻辑：
+
+![LinkedList-addFirst](resources/LinkedList-addFirst.png)
+
+上面的图解忽略了判断f是否为null的情况，当链表没有元素的时候，首次加入的元素既是first，也是last。
+
+由于`addLast()`,`offerLast()`逻辑大致相同，这里就不再重复了。
+
+下面看一下删除元素的接口`removeFirst()`,`pollFirst()`，这两个方法的主要区别在于当first节点
+为null时，`removeFirst()`会抛出`NullPointerException`，而`pollFirst()`会return一个null
+值，这里我觉得实际的应用场景上可能`pollFirst()`的使用会更多一些，毕竟空指针这种异常对于调用方
+并不是很友好。
+
+那么下面主要看一下`pollFirst()`的实现，同理`pollLast()`实现类似，不再赘述：
+
+```java
+    /**
+     * Retrieves and removes the first element of this list,
+     * or returns {@code null} if this list is empty.
+     *
+     * @return the first element of this list, or {@code null} if
+     *     this list is empty
+     * @since 1.6
+     */
+    public E pollFirst() {
+        final Node<E> f = first;
+        return (f == null) ? null : unlinkFirst(f);
+    }
+
+    /**
+     * Unlinks non-null first node f.
+     */
+    private E unlinkFirst(Node<E> f) {
+        // assert f == first && f != null;
+        final E element = f.item;
+        final Node<E> next = f.next;
+        f.item = null;
+        f.next = null; // help GC
+        first = next;
+        if (next == null)
+            last = null;
+        else
+            next.prev = null;
+        size--;
+        modCount++;
+        return element;
+    }
+```
+
+这里的操作实际上也比较直接，先暂存待删除的first指针元素和next引用，然后断开first指针和下一个
+节点之间的引用，最后将next节点作为新的头节点，并将整体的size减少1个，图示如下：
+
+![LinkedList-pollFirst](resources/LinkedList-pollFirst.png)
+
+### ArrayDeque实现分析
+
+`ArrayDeque`这个类是`Deque`接口的数组实现，这里底层主要是应用了一个循环数组的结构，数组的实现
+方式相对于链表实现来说要更高效，但是需要占用多余的内存来确保数组的循环结构，这里的实现相对于
+`LinkedList`来说要稍微难以理解一些，主要是因为很多代码都包含位运算来保证环形结构，所以导致代码
+看上去不是很直观。
+
+在分析这部分源码的时候，在网上看到了一篇博客，感觉已经把`ArrayDeque`的内部实现细节讲解的非常清楚
+了，所以这里附上博客链接
+
+[剖析ArrayDeque](https://www.cnblogs.com/swiftma/p/6029547.html)
+
+我这里只针某些难以理解的代码做一些解释：
+
+```java
+        elements[head = (head - 1) & (elements.length - 1)] = e;
+        if (head == tail)
+            doubleCapacity();
+```
+
+在`addFirst`,`addLast`操作中都有类似的代码，这里通过 (head - 1) 和 (elements.length - 1)
+做 & 操作，来确定下一个正确的头/尾节点，为什么这里可以这样做呢？其实主要原因是因为`ArrayDeque`
+的对底层数组的length做了限定：length必须是2的n次幂。
+
+于是我们可以想象一下(elements.length - 1)这个表达式的二进制形式，一定是如下的样子：
+
+![binary](resources/binary.png)
+
+那么(head - 1)与这样一个形式的二进制值做 & 操作之后，可以确保得到的值都在数组逻辑循环的正确位置，
+这其实和取余数的运算得到的效果是一致的，但是要比普通的取余操作效率更高。
+
+假设head为0，那么经过这个操作之后，head就是elements.length - 1，即最后一个元素。
+
+再看看下面的代码：
+
+```java
+    private static int calculateSize(int numElements) {
+        int initialCapacity = MIN_INITIAL_CAPACITY;
+        // Find the best power of two to hold elements.
+        // Tests "<=" because arrays aren't kept full.
+        if (numElements >= initialCapacity) {
+            initialCapacity = numElements;
+            initialCapacity |= (initialCapacity >>>  1);
+            initialCapacity |= (initialCapacity >>>  2);
+            initialCapacity |= (initialCapacity >>>  4);
+            initialCapacity |= (initialCapacity >>>  8);
+            initialCapacity |= (initialCapacity >>> 16);
+            initialCapacity++;
+
+            if (initialCapacity < 0)   // Too many elements, must back off
+                initialCapacity >>>= 1;// Good luck allocating 2 ^ 30 elements
+        }
+        return initialCapacity;
+    }
+```
+
+这里的numElements是用户传入的初始元素个数，而返回值iniCapacity是实际初始化的数组容量，而这里
+的位运算操作实际上是为了确保初始的容量一定是一个刚好大于 numElements 的 2的n次幂，例如
+numElements = 10，那么initCapacity就是16, 如果numElements是16，那么initCapacity就是32，
+以此类推。
