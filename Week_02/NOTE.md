@@ -421,3 +421,142 @@ P.S: 我发现**看懂了**跟**写出来**真的是两码事，写这个分析�
 例如字母总共有26个，如果不区分大小写的话，刚好用一个长度为26的数组下标来表示；同理每位数字只能是
 0~9其中一个，那就可以用一个长度为10的数组来表示，所以说数组和哈希表的区别其实就在于一个是通过index
 查找元素，另一个是通过更复杂的key值查找元素。
+
+## 242&49刷题笔记-重构题解过程
+
+这里说一下下面的两个题目
+1. [242-valid-anagram](https://leetcode-cn.com/problems/valid-anagram/description/)
+2. [49-group-anagrams](https://leetcode-cn.com/problems/group-anagrams/)
+
+这两个题目是有前后联系的，在做这两个题目的时候，我对自己的代码进行反复的重构之后，发现自顶向下的
+编程方式以及可读性的重要性，下面总结一下重构的过程，以做记录。
+
+首先看第一个题目：有效的字母异位词，这里就不对题目进行描述了，直接上官方的两种题解：
+
+```java
+public boolean isAnagram(String s, String t) {
+    if (s.length() != t.length()) {
+        return false;
+    }
+    char[] str1 = s.toCharArray();
+    char[] str2 = t.toCharArray();
+    Arrays.sort(str1);
+    Arrays.sort(str2);
+    return Arrays.equals(str1, str2);
+}
+```
+
+这个题解的思路也很简单，就是先排序，再比较。
+
+还有下面另外一种解法：
+
+```java
+public boolean isAnagram(String s, String t) {
+    if (s.length() != t.length()) {
+        return false;
+    }
+    int[] counter = new int[26];
+    for (int i = 0; i < s.length(); i++) {
+        counter[s.charAt(i) - 'a']++;
+        counter[t.charAt(i) - 'a']--;
+    }
+    for (int count : counter) {
+        if (count != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+这种解法的思路在于用一个长度为26的数组作为哈希表，来存储每个字符出现的次数，在s中出现一次就+1，
+在t中出现一次就-1，最后检查数组中是否有不为0的值。
+
+这两种题解，我都根据自顶向下的编程思路，做出了重构，虽然核心的思路是一样的，但是我觉得这种编码
+方式要更偏向于工程代码应有的样子。
+
+下面是解法1重构后的代码：
+
+```java
+class Solution {
+    public boolean isAnagram(String s, String t) {
+        return resort(s).equals(resort(t));
+    }
+
+    private String resort(String s) {
+        if (s == null) return "";
+        if (s.length() < 2) return s;
+
+        char[] s_arr = s.toCharArray();
+        Arrays.sort(s_arr);
+        return String.valueOf(s_arr);
+    }
+}
+```
+
+可以看到我抽取出了一个方法`resort`来对字符串进行转换，然后主逻辑用一行代码解决，这样在读起来的
+时候，一眼就能知道思路，根本不需要过多的语言解释，而resort方法的实现也考虑了字符串为null或""的
+情况，以及只有1个字符的情况，更重要的是，这个resort方法可以被直接复用到第49题中。
+
+下面是解法2的重构：
+
+```java
+class Solution {
+    public boolean isAnagram(String s, String t) {
+        if (s == null || t == null || s.length() != t.length()) {
+            return false;
+        }
+        
+        int[] letters_cnt = countLetters(s, t, s.length());
+        return checkLettersCnt(letters_cnt);
+    }
+
+    private int[] countLetters(String s, String t, int length) {
+        int[] letters_cnt = new int[26];
+        for (int i = 0; i < length; i++) {
+            letters_cnt[s.charAt(i) - 'a'] += 1;
+            letters_cnt[t.charAt(i) - 'a'] -= 1;
+        }
+        return letters_cnt;
+    }
+
+    private boolean checkLettersCnt(int[] letters_cnt) {
+        for (int letter_count : letters_cnt) {
+            if (letter_count != 0) return false;
+        }
+        return true;
+    }
+}
+```
+
+这里重构后思路也一目了然，首先是统计字母出现的次数并存储到数组中，即`countLetters`，然后检查
+数组中的值是否都为0，也就是`checkLettersCnt`
+
+下面再说一下第二个题目的解法，
+
+```java
+class Solution {
+    public List<List<String>> groupAnagrams(String[] strs) {
+        if (strs == null || strs.length == 0) {
+            throw new IllegalArgumentException("Input list of string can't be empty!");
+        }
+
+        Map<String, List<String>> result = new HashMap<>(strs.length);
+        for (String word : strs) {
+            String key = resort(word);
+            if (result.containsKey(key)) {
+                result.get(key).add(word);
+            } else {
+                List<String> anagrams = new ArrayList<>();
+                anagrams.add(word);
+                result.put(key, anagrams);
+            }
+        }
+        return new ArrayList<>(result.values());
+    }
+}
+```
+
+可以看到上面的解法依赖于之前重构出的`resort`方法，并且借住了一个hashmap来存储中间结果，这里会
+发现如果没有之前重构出的`resort`方法，那么就需要自己再编写一些和之前题解重复的代码逻辑，在工程
+中这样的重复代码实际上会增加维护成本，还是应该尽量避免。

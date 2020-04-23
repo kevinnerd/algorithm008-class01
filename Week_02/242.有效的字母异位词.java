@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 /*
  * @lc app=leetcode.cn id=242 lang=java
  *
@@ -35,18 +37,26 @@
  */
 
 // @lc code=start
+/**
+ * 解法1：26位数组代替hashmap，存储字母出现次数，最后统计数组得出结果
+ */
 class Solution {
     public boolean isAnagram(String s, String t) {
-        if (s.length() != t.length()) {
+        if (s == null || t == null || s.length() != t.length()) {
             return false;
         }
-        // 用26位数组存储字母出现的次数
+        
+        int[] letters_cnt = countLetters(s, t, s.length());
+        return checkLettersCnt(letters_cnt);
+    }
+
+    private int[] countLetters(String s, String t, int length) {
         int[] letters_cnt = new int[26];
-        for (int i = 0; i < s.length(); i++) {
+        for (int i = 0; i < length; i++) {
             letters_cnt[s.charAt(i) - 'a'] += 1;
             letters_cnt[t.charAt(i) - 'a'] -= 1;
         }
-        return checkLettersCnt(letters_cnt);
+        return letters_cnt;
     }
 
     private boolean checkLettersCnt(int[] letters_cnt) {
@@ -54,6 +64,24 @@ class Solution {
             if (letter_count != 0) return false;
         }
         return true;
+    }
+}
+
+/**
+ * 解法2：排序然后比较
+ */
+class Solution {
+    public boolean isAnagram(String s, String t) {
+        return resort(s).equals(resort(t));
+    }
+
+    private String resort(String s) {
+        if (s == null) return "";
+        if (s.length() < 2) return s;
+
+        char[] s_arr = s.toCharArray();
+        Arrays.sort(s_arr);
+        return String.valueOf(s_arr);
     }
 }
 // @lc code=end
