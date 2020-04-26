@@ -908,7 +908,7 @@ if (right < size &&
 这段代码中的`n - k + 1`的含义实际上是结果集的元素个数，这个个数看上去可能不太直观，下面画个图
 解释一下为什么结果集的个数就是：`n - k + 1`
 
-[explain-ans-size](resources/explain-ans-size.png)
+![explain-ans-size](resources/explain-ans-size.png)
 
 从上面图解可以直观的理解，`n - k + 1`就是移动窗口所得到的所有结果集的个数~
 
