@@ -993,7 +993,7 @@ class Solution {
 
 下面说一下双端队列的思路，这里在解释思路之前先根据代码画了一些图，希望能辅助理解：
 
-[explain-deque-solution](resources/explain-deque-solution.png)
+![explain-deque-solution](resources/explain-deque-solution.png)
 
 参照上面的图，我这里解释一下代码逻辑，首先最外层循环依次遍历数组的每个元素，这个很容易理解，关键
 在于循环内部，实际上分为4个步骤，在说这4个步骤之前，必须强调一下，这里建立的`Deque`队列中存储的
