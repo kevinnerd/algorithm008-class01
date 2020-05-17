@@ -228,3 +228,137 @@ class Solution(object):
 能够导出全局最优解。
 
 ## 二分查找
+
+二分查找这部分的知识，从理论角度理解其实很容易，而且在初高中时也接触过相关的思想，无非就每次取中
+点，然后去掉一半的不可能存在的数据，重复多次查找，最终找到结果。
+
+虽然二分查找的原理很简单，但是边界条件的处理却是容易掉进坑里的地方，要写出bug free的二分查找代码
+其实需要非常细心才可以。
+
+另外应用二分查找有3个前提条件：
+1. 目标函数的单调性
+2. 存在上下边界
+3. 能够通过索引访问数据
+
+下面先上一下代码模板：
+
+```python
+def binSearch(array, target):
+    left, right = 0, len(array) - 1
+    while left <= right:
+        mid = left + (right - left) / 2
+        if array[mid] == target:
+            return array[mid]
+        elif array[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1            
+```
+
+由于这部分主要还是多练习题目，所以下面直接上题目解析，加深理解
+
+### [60-x的平方根](https://leetcode-cn.com/problems/sqrtx/)
+
+```python
+class Solution(object):
+    def mySqrt(self, x):
+        """
+        :type x: int
+        :rtype: int
+        """
+
+        left, right = 0, x // 2 + 1
+        while left < right:
+            mid = (left + right + 1) / 2
+            res = mid * mid
+            if x < res:
+                right = mid - 1
+            else:
+                left = mid
+        return left
+```
+
+此处附上LeetCode解法: https://leetcode-cn.com/problems/sqrtx/solution/er-fen-cha-zhao-niu-dun-fa-python-dai-ma-by-liweiw/
+
+## 总结
+
+这周在刷题看题解的过程中，发现了一个很好的讲解算法的系列文章，作者是：labuladong，而这一系列的
+文章我在读的时候感触颇深，里面有各种常见算法的思路讲解，而且讲解的非常清晰，让人有种豁然开朗的感觉，
+所以这里记录一下文章的gitbook链接：
+
+[labuladong的算法小抄](https://labuladong.gitbook.io/algo/)
+
+看了这里面的讲解之后，我感觉自己再去写总结已经没有啥意义了，还是多花时间去刷题吧~~~
+
+## 旋转排序数组系列问题
+
+在死磕了1个小时旋转排序数组问题之后，终于理解了最普通的解法，这里记录一下关键思路。
+
+### 题目：[33-搜索旋转排序数组](https://leetcode-cn.com/problems/search-in-rotated-sorted-array/)
+
+解法代码：
+```python
+class Solution(object):
+    def search(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: int
+        """
+        lo, hi = 0, len(nums) - 1
+        while lo <= hi:
+            mid = lo + (hi - lo) // 2
+            if nums[mid] == target:
+                return mid
+            if nums[lo] <= nums[mid]:
+                if nums[lo] <= target < nums[mid]:
+                    hi = mid - 1
+                else:
+                    lo = mid + 1
+            else:
+                if nums[mid] < target <= nums[hi]:
+                    lo = mid + 1
+                else:
+                    hi = mid - 1
+        return -1
+```
+
+**核心思路**： 只关注有序部分，不关注无序部分
+
+上面的思路是我在看了好几个题解，并且思考之后总结出的最容易理解的思路，这里所说的只关注有序，不关注
+无序，详细解释如下：
+
+首先看图：
+
+![搜索旋转排序数组](resources/搜索旋转排序数组.png)
+
+其实我想从上面的图中说明一个问题：**无论mid怎么选择，总有一半的数据是有序的**，大家可以仔细思考
+一下是不是这样，我也是忽然顿悟到这个道理的，所以知道这个点之后，我们只需要关注有序的部分来完成
+二分查找的逻辑即可，下面分解一下代码来解释：
+
+```python
+if nums[lo] <= nums[mid]:
+    if nums[lo] <= target < nums[mid]:
+        hi = mid - 1
+    else:
+        lo = mid + 1
+```
+
+上面的逻辑首先判断 `nums[lo] <= nums[mid]`，也就是lo到mid这部分是有序的，那么我们只需要再
+进一步判断一下，target是不是在`[lo, mid)`这个区间中: `nums[lo] <= target < nums[mid]:`
+如果在，那么就在这个区间继续找，那么后续的查找就变成了普通的二分查找；如果不在，那么就在另外一个
+区间再做相同判断，这时另外一个区间肯定不是完全有序的，但也肯定有一部分是有序的。
+
+下面看else部分：
+```python
+else:
+    if nums[mid] < target <= nums[hi]:
+        lo = mid + 1
+    else:
+        hi = mid - 1
+```
+
+当`[lo, mid)`这部分不是有序的，那么`(mid, hi]`这部分肯定是有序的，所以就在这部分找target就
+可以了，这就和上面if的部分一样了。
+
+我觉得从这个角度来理解一下这个题目，会相对好理解很多，而且很快能写出代码。
