@@ -54,31 +54,29 @@ class Solution(object):
         :type wordList: List[str]
         :rtype: int
         """
-        # corner case
         if endWord not in wordList:
             return 0
-        # Dictionary to hold combination of words that can be formed,
-        # from any given word. By changing one letter at a time.
+
         L = len(beginWord)
-        intermediate_dict = defaultdict(list)
+        inter_dict = defaultdict(list)
         for i in range(L):
             for word in wordList:
-                intermediate_word = word[:i] + "*" + word[i+1:]
-                intermediate_dict[intermediate_word].append(word)
-        # bfs
-        queue = [(beginWord, 1)]
+                inter_dict[word[:i] + '*' + word[i+1:]].append(word)
+
+        queue = [beginWord]
         visited = set([beginWord])
+        step = 1
         while queue:
-            word, step = queue.pop(0)
-            for i in range(L):
-                intermediate_word = word[:i] + "*" + word[i+1:]
-                for inter_word in intermediate_dict[intermediate_word]:
-                    if inter_word == endWord:
-                        return step + 1
-                    if inter_word not in visited:
-                        queue.append((inter_word, step + 1))
-                        visited.add(inter_word)
+            size = len(queue)
+            for i in range(size):
+                cur_word = queue.pop(0)
+                for i in range(L):
+                    inter_word = cur_word[:i] + '*' + cur_word[i+1:]
+                    for word in inter_dict[inter_word]:
+                        if word == endWord:
+                            return step + 1
+                        if word not in visited:
+                            visited.add(word)
+                            queue.append(word)
+            step += 1
         return 0
-# leetcode submit region end(Prohibit modification and deletion)
-if __name__ == '__main__':
-    Solution().ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"])
